@@ -30,6 +30,36 @@
             <input type="text" name="user_input" placeholder="Enter your query" required autofocus>
             <input type="submit" value="Send">
         </form>
-    </div>
+    </div>  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        const socket = io({
+            transports: ['websocket']
+        });
+
+        socket.on('connect', () => {
+            console.log("WebSocket connected successfully!");
+        }); 
+
+        // Listen for additional responses
+        socket.on('additional_response', (data) => {
+            console.log('Received additional response:', data);
+            const chatBox = document.getElementById("chat-box");
+            if (!chatBox) {
+                console.error("Chat box element not found!");
+                return;
+            }
+            const additionalMessage = document.createElement('div');
+            additionalMessage.className = 'message ai';
+            additionalMessage.innerHTML = data.text;
+            chatBox.appendChild(additionalMessage);
+            chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+        });
+
+         // Handle any socket errors
+        socket.on('connect_error', (error) => {
+            console.error('WebSocket connection error:', error);
+        });
+    </script>
 </body>
 </html>
