@@ -1,8 +1,7 @@
 from flask import Flask, request, render_template, session
-from wrapper.main import get_gemini_response
-import re, time
-from flask_socketio import SocketIO, emit
-import eventlet
+from wrapper.main import get_gemini_response, get_related_news
+import re
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
@@ -19,10 +18,12 @@ def format_gemini_response(text):
 
 @app.route("/test_emit")
 def test_emit():
-    print("this was called")
-    additional_response = "Test follow-up message from Gemini!"
-    print(f"Emitting additional_response: {additional_response}")
-    socketio.emit('additional_response', {'text': additional_response})
+    # TODO - add message to session
+    if session.get('chat_history') and len(session['chat_history']) >= 1:
+        last_gemini_response = session['chat_history'][-1]['text']
+        news = get_related_news(last_gemini_response)
+        session['chat_history'].append({'type': 'ai', 'text': news})
+    socketio.emit('additional_response', {'text': news})
     return "Emit sent!"
 
 @app.route("/", methods=["GET", "POST"])

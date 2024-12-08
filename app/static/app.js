@@ -36,4 +36,8 @@ document.addEventListener("DOMContentLoaded", function() {
         updateSelectedTopic();
         setTimeout(scrollToBottom, 100);
     });
+
+    document.getElementById("news-button").addEventListener("click", function() {
+        fetch('/test_emit');
+    });
 });
