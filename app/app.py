@@ -8,22 +8,23 @@ app.secret_key = 'your_secret_key'  # Required for session management
 socketio = SocketIO(app, async_mode='eventlet')
 
 def format_gemini_response(text):
-    text = re.sub(r'```(.*?)```', r'<pre><code>\1</code></pre>', text, flags=re.S)
+    text = re.sub(r'```(.*?)```', r'<pre class="code-block"><code>\1</code></pre>', text, flags=re.S)
     text = re.sub(r'\n\s*\n+', '\n\n', text)  # Remove extra blank lines
-    text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)  # Bold formatting
-    text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', text)      # Italic formatting
-    text = re.sub(r'^\* ', r'• ', text, flags=re.M)
-    text = text.replace("\n", "<br>")                    # Line breaks outside code blocks
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text">\1</b>', text)  # Bold formatting
+    text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text)    # Italic formatting
+    text = re.sub(r'^\* ', r'<span class="bullet">•</span> ', text, flags=re.M)
+    text = text.replace("\n", "<br>")  # Line breaks outside code blocks
     return text
 
 @app.route("/test_emit")
 def test_emit():
-    # TODO - add message to session
-    if session.get('chat_history') and len(session['chat_history']) >= 1:
+    if session.get('chat_history') and len(session['chat_history']) >= 2:
         last_gemini_response = session['chat_history'][-1]['text']
-        news = get_related_news(last_gemini_response)
-        session['chat_history'].append({'type': 'ai', 'text': news})
-    socketio.emit('additional_response', {'text': news})
+        last_user_query = session['chat_history'][-2]['text']
+        news = get_related_news(last_gemini_response, last_user_query)
+        formatted_news = format_gemini_response(news)
+        session['chat_history'].append({'type': 'ai', 'text': formatted_news})
+    socketio.emit('additional_response', {'text': formatted_news})
     return "Emit sent!"
 
 @app.route("/", methods=["GET", "POST"])
@@ -51,14 +52,6 @@ def index():
         session['chat_history'].append({'type': 'user', 'text': user_input})
         session['chat_history'].append({'type': 'ai', 'text': formatted_response})
         session.modified = True
-                
-        print("Preparing to emit additional response...")
-        
-        additional_response = "Test follow-up message from Gemini!"
-        print(f"Emitting additional_response: {additional_response}")
-        socketio.emit('additional_response', {'text': additional_response})
-        
-        print("Additional response emitted successfully!")
 
     limited_chat_history = session['chat_history'][-10:]
     return render_template("app.html", chat_history=limited_chat_history)

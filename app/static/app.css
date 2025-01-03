@@ -97,3 +97,40 @@ input[type="submit"]:hover {
     align-self: flex-start;
     background-color: #dbeafe;
 }
+
+/* Bold and Italic Text */
+.bold-text {
+    font-weight: bold;
+    color: #1a73e8; /* Subtle blue for emphasis */
+}
+
+.italic-text {
+    font-style: italic;
+    color: #555; /* Slightly lighter gray */
+}
+
+/* Bullet Points */
+.bullet {
+    color: #666; /* Neutral gray for bullets */
+}
+
+/* Code Blocks */
+.code-block {
+    background-color: #f8f9fa; /* Light gray for background */
+    border: 1px solid #e1e1e1;
+    border-radius: 5px;
+    padding: 10px;
+    font-family: "Courier New", Courier, monospace;
+    overflow-x: auto;
+}
+
+/* Hover Effects */
+.bold-text:hover, .italic-text:hover {
+    color: #0056b3; /* Darker blue on hover */
+    text-decoration: underline;
+}
+
+/* Line Break Styling */
+br {
+    line-height: 1.2;
+}
