@@ -8,6 +8,84 @@ app.secret_key = 'your_secret_key'  # Required for session management
 socketio = SocketIO(app, async_mode='eventlet')
 
 def format_gemini_response(text):
+    def convert_table(match):
+        table_text = match.group(0)
+        rows = [row.strip() for row in table_text.split('\n') if row.strip()]
+        
+        # Verify this is actually a table by checking first two rows
+        if len(rows) < 2 or not all('|' in row for row in rows[:2]):
+            return table_text
+            
+        # Check for separator row (e.g., |------|------|)
+        if not rows[1].replace('|', '').replace('-', '').replace(':', '').strip() == '':
+            return table_text
+            
+        # Process header
+        header = [cell.strip() for cell in rows[0].strip('|').split('|') if cell.strip()]
+        
+        # Process data rows
+        data_rows = []
+        for row in rows[2:]:  # Skip header and separator
+            cells = [cell.strip() for cell in row.strip('|').split('|') if cell.strip()]
+            if cells:
+                data_rows.append(cells)
+        
+        # Build HTML table without extra newlines
+        html_parts = []
+        html_parts.append('<div class="table-wrapper"><table class="gemini-table">')
+        html_parts.append('<thead><tr>')
+        for cell in header:
+            html_parts.append(f'<th>{cell}</th>')
+        html_parts.append('</tr></thead>')
+        html_parts.append('<tbody>')
+        
+        for row in data_rows:
+            html_parts.append('<tr>')
+            # Pad shorter rows with empty cells if necessary
+            while len(row) < len(header):
+                row.append('')
+            for cell in row[:len(header)]:
+                html_parts.append(f'<td>{cell}</td>')
+            html_parts.append('</tr>')
+        
+        html_parts.append('</tbody></table></div>')
+        return ''.join(html_parts)  # Join without newlines
+
+    # Process text in parts to preserve non-table content
+    parts = []
+    last_end = 0
+    
+    # Look for proper markdown tables with regex
+    # Updated pattern to be more precise about newlines
+    pattern = r'(?:\n|\A)\|[^\n]+\|\n\|[-:|]+\|\n(?:\|[^\n]+\|\n?)+(?=\n[^|]|\Z)'
+    
+    for match in re.finditer(pattern, text, re.MULTILINE):
+        # Add text before the table, preserving original spacing
+        start = match.start()
+        if start > 0 and text[start-1] == '\n':
+            start -= 1
+        parts.append(text[last_end:start])
+        # Add the converted table
+        parts.append(convert_table(match))
+        last_end = match.end()
+    
+    # Add remaining text after last table
+    parts.append(text[last_end:])
+    
+    # Join all parts and apply remaining formatting
+    text = ''.join(parts)
+    
+    # Apply other formatting
+    text = re.sub(r'```(.*?)```', r'<pre class="code-block"><code>\1</code></pre>', text, flags=re.S)
+    text = re.sub(r'\n\s*\n+', '\n\n', text)
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text">\1</b>', text)
+    text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text)
+    text = re.sub(r'^\* ', r'<span class="bullet">•</span> ', text, flags=re.M)
+    text = text.replace("\n", "<br>")
+    
+    return text
+
+def format_gemini_response_text(text):
     text = re.sub(r'```(.*?)```', r'<pre class="code-block"><code>\1</code></pre>', text, flags=re.S)
     text = re.sub(r'\n\s*\n+', '\n\n', text)  # Remove extra blank lines
     text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text">\1</b>', text)  # Bold formatting
@@ -22,7 +100,7 @@ def test_emit():
         last_gemini_response = session['chat_history'][-1]['text']
         last_user_query = session['chat_history'][-2]['text']
         news = get_related_news(last_gemini_response, last_user_query)
-        formatted_news = format_gemini_response(news)
+        formatted_news = format_gemini_response_text(news)
         session['chat_history'].append({'type': 'ai', 'text': formatted_news})
     socketio.emit('additional_response', {'text': formatted_news})
     return "Emit sent!"

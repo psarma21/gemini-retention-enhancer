@@ -52,8 +52,10 @@ def get_related_news(last_gemini_response, last_user_query):
     # print(news)
             
     # original query + Gemini original response + news 
-    summarize_news_prompt = "Based on the user's original query and your initial response, analyze the provided news articles to identify a recent real-world event, example, or development that connects to your response. Summarize the event and clearly explain its relevance to the original question and your explanation. If no provided articles are relevant, use a recent real-world example or event you know to establish the connection. The following was the user query: " + last_user_query + ". The following was your response: " + last_gemini_response + ". The following is the news: " + news
-    result = model.generate_content([summarize_news_prompt], generation_config=config)
+    
+    summarize_news_prompt = "Using the user's original query and your initial response, analyze the provided news articles to identify a real-world event, example, or application that connects to the concept discussed (e.g., linked lists). Summarize this connection in a concise and user-friendly manner, emphasizing how it relates to the user's question. If no relevant articles are available, reference a well-known real-world scenario or example to illustrate the concept. Bold key terms or highlight notable examples to make the connection stand out and enhance user engagement. For instance, if a technology like blockchain or a company like Google uses linked lists in practice, emphasize this in your explanation."
+    context = " The following was the user query: " + last_user_query + ". The following was your response: " + last_gemini_response + ". The following is the news: " + news
+    result = model.generate_content([summarize_news_prompt+context], generation_config=config)
     return result.text
     
     

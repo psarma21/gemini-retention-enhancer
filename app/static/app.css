@@ -29,13 +29,18 @@ body {
     height: calc(100vh - 150px);
 }
 
-h1 {
-    color: #3a3b3c;
+/* Updated heading styles */
+h1, h2, h3, h4, h5, h6 {
+    color: #000000;
     font-weight: 600;
+}
+
+h1 {
     text-align: center;
     margin: 20px 0;
 }
 
+/* Form styles */
 form {
     display: flex;
     align-items: center;
@@ -78,6 +83,7 @@ input[type="submit"]:hover {
     background-color: #0056b3;
 }
 
+/* Message styles */
 .message {
     max-width: 75%;
     padding: 12px 18px;
@@ -98,25 +104,27 @@ input[type="submit"]:hover {
     background-color: #dbeafe;
 }
 
-/* Bold and Italic Text */
+/* Updated text styling */
 .bold-text {
-    font-weight: bold;
-    color: #1a73e8; /* Subtle blue for emphasis */
+    font-weight: 600;
+    color: #000000;
 }
 
 .italic-text {
     font-style: italic;
-    color: #555; /* Slightly lighter gray */
+    color: #555;
 }
 
-/* Bullet Points */
+/* Updated bullet point styling */
 .bullet {
-    color: #666; /* Neutral gray for bullets */
+    color: #007bff;
+    font-weight: normal;
+    margin-right: 5px;
 }
 
-/* Code Blocks */
+/* Code block styles */
 .code-block {
-    background-color: #f8f9fa; /* Light gray for background */
+    background-color: #f8f9fa;
     border: 1px solid #e1e1e1;
     border-radius: 5px;
     padding: 10px;
@@ -124,13 +132,94 @@ input[type="submit"]:hover {
     overflow-x: auto;
 }
 
-/* Hover Effects */
-.bold-text:hover, .italic-text:hover {
-    color: #0056b3; /* Darker blue on hover */
-    text-decoration: underline;
-}
-
-/* Line Break Styling */
+/* Line break styling */
 br {
     line-height: 1.2;
+}
+
+
+/* Message-specific table styles */
+.message.ai .table-wrapper {
+    margin: 15px 0;
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    width: 100%;
+}
+
+.message.ai .gemini-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: white;
+    font-size: 14px;
+    margin: 0;
+    table-layout: fixed;
+}
+
+.message.ai .gemini-table th {
+    background-color: #2c5282;
+    color: white;
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+    border: 1px solid #2c5282;
+    position: relative;
+}
+
+.message.ai .gemini-table th:after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #4299e1;
+}
+
+.message.ai .gemini-table td {
+    padding: 10px 16px;
+    border: 1px solid #e2e8f0;
+    color: #4a5568;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.message.ai .gemini-table tbody tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+.message.ai .gemini-table tbody tr:hover {
+    background-color: #ebf8ff;
+    transition: background-color 0.2s ease;
+}
+
+.message.ai .gemini-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Add subtle gradient to header */
+.message.ai .gemini-table thead tr {
+    background: linear-gradient(180deg, #2c5282 0%, #2a4365 100%);
+}
+
+/* First column styling */
+.message.ai .gemini-table td:first-child {
+    font-weight: 500;
+    color: #2d3748;
+    background-color: #f7fafc;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .message.ai .gemini-table th,
+    .message.ai .gemini-table td {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .message.ai .table-wrapper {
+        margin: 10px 0;
+    }
 }
