@@ -28,11 +28,11 @@ def get_gemini_response(text, topic, last_user_prompt, last_gemini_response, sec
     # modified query: vanilla query + modernization of vocabulary/language + customizable response (optional) + previous context to query
     try:
         if topic != "none":
-            prompt = text + ". The previous sentence(s) are the user's initial prompt. Rewrite your response to make it more engaging and relatable for a novice CS student in college who is interested in " + topic + " . Be creative and modern in your explanation. Include a relevant diagram, table, or other visual representation to enhance understanding, and provide a concise walkthrough explaining its significance and how it relates to the user's question.  "
+            prompt = text + ". The previous sentence(s) are the user's initial prompt. Rewrite your response to make it more engaging and relatable for a novice CS student in college who is interested in " + topic + " . Be creative and modern in your explanation. Include a relevant diagram, table, or other visual representation to enhance understanding, and provide a concise walkthrough explaining its significance and how it relates to the user's question. Bold key concepts to highlight their significance. "
             prompt_with_context = add_context_to_prompt(prompt, u1=last_user_prompt, g1=last_gemini_response, u2=second_to_last_user_prompt)
             response =  model.generate_content([prompt_with_context], generation_config=config)  
         else:
-            prompt = text + ". The previous sentence(s) are the user's initial prompt. Rewrite your response to make it more engaging and relatable for a novice CS student in college. Be creative and modern in your explanation. Include a relevant diagram, table, or other visual representation to enhance understanding, and provide a concise walkthrough explaining its significance and how it relates to the user's question. "
+            prompt = text + ". The previous sentence(s) are the user's initial prompt. Rewrite your response to make it more engaging and relatable for a novice CS student in college. Be creative and modern in your explanation. Include a relevant diagram, table, or other visual representation to enhance understanding, and provide a concise walkthrough explaining its significance and how it relates to the user's question. Bold key concepts to highlight their significance. "
             prompt_with_context = add_context_to_prompt(prompt, u1=last_user_prompt, g1=last_gemini_response, u2=second_to_last_user_prompt)
             response =  model.generate_content([prompt_with_context], generation_config=config)  
         return response.text
@@ -53,7 +53,6 @@ def get_related_news(last_gemini_response, last_user_query):
     # print(news)
             
     # original query + Gemini original response + news 
-    
     summarize_news_prompt = "Using the user's original query and your initial response, analyze the provided news articles to identify a real-world event, example, or application that connects to the concept discussed (e.g., linked lists). Summarize this connection in a concise and user-friendly manner, emphasizing how it relates to the user's question. If no relevant articles are available, reference a well-known real-world scenario or example to illustrate the concept. Bold key terms or highlight notable examples to make the connection stand out and enhance user engagement. For instance, if a technology like blockchain or a company like Google uses linked lists in practice, emphasize this in your explanation."
     context = " The following was the user query: " + last_user_query + ". The following was your response: " + last_gemini_response + ". The following is the news: " + news
     result = model.generate_content([summarize_news_prompt+context], generation_config=config)
