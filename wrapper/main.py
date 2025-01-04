@@ -2,6 +2,7 @@
 import google.generativeai as genai
 import os
 from newsapi import NewsApiClient
+import requests
 
 # Configure the API key and initialize the model
 api_key = os.getenv("GEMINI_API_KEY")
@@ -57,6 +58,18 @@ def get_related_news(last_gemini_response, last_user_query):
     context = " The following was the user query: " + last_user_query + ". The following was your response: " + last_gemini_response + ". The following is the news: " + news
     result = model.generate_content([summarize_news_prompt+context], generation_config=config)
     return result.text
+
+def get_image_description_and_image(last_gemini_response, last_user_query, key_word):
+    # Call Gemini to generate a description for the bolded word
+    image_query_prompt = "Given the user's question, your response, and specific word in your response, provide a detailed description of an image that would visually represent that word that also enhances the understanding of the overlying concept discussed. The image should be creative, colorful, and engaging, designed to help a novice computer science learner grasp the concept intuitively. For example, if the word is 'linked list', the description might include visual metaphors or illustrative elements, such as 'a chain of nodes connected by arrows, each node containing a small icon of data inside.' The goal is to create a vivid and imaginative representation that bridges theory with an accessible visual analogy."
+    context = " Here is the user's query: " + last_user_query + " . Here is your response: " + last_gemini_response + ' . Here is the key word: ' + key_word
+    image_description_response = model.generate_content([image_query_prompt + context], generation_config=config)
+    
+    print(image_description_response.text)
+
+    url = f"https://pollinations.ai/p/{image_description_response.text}"
+    response = requests.get(url)
+    return response.url
     
     
     

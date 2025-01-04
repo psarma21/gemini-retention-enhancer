@@ -54,29 +54,62 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function fetchImageForWord(word) {
     // Example of sending the bolded word to the backend for image description
-    // fetch("/generate-image-description", {
-    //     method: "POST",
-    //     headers: {
-    //         "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({ word: word }),
-    // })
-    //     .then((response) => response.json())
-    //     .then((data) => {
-    //         const imageUrl = data.image_url; // Get image URL from response
-    //         displayImagePopup(word, imageUrl); // Show image popup
-    //     })
-    //     .catch((error) => console.error("Error fetching image:", error));
-    console.log("made it here")
+    fetch("/generate-image-description", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ word: word }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            const imageUrl = data.image_url; // Get image URL from response
+            displayImagePopup(word, imageUrl); // Show image popup
+        })
+        .catch((error) => console.error("Error fetching image:", error));
 }
 
 function displayImagePopup(word, imageUrl) {
+    // Create overlay
+    const overlay = document.createElement("div");
+    overlay.classList.add("image-popup-overlay");
+    
+    // Create popup
     const popup = document.createElement("div");
     popup.classList.add("image-popup");
+    
+    // Create content
     popup.innerHTML = `
+        <button class="close-button" aria-label="Close popup">×</button>
         <h3>${word}</h3>
-        <img src="${imageUrl}" alt="${word}">
-        <button onclick="this.parentElement.remove()">Close</button>
+        <img src="${imageUrl}" alt="${word}" loading="lazy">
     `;
+    
+    // Add click handlers
+    const closePopup = () => {
+        overlay.remove();
+        popup.remove();
+    };
+    
+    // Close on button click
+    popup.querySelector('.close-button').addEventListener('click', closePopup);
+    
+    // Close on overlay click
+    overlay.addEventListener('click', closePopup);
+    
+    // Prevent popup close when clicking inside popup
+    popup.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+    
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closePopup();
+        }
+    });
+    
+    // Add to DOM
+    document.body.appendChild(overlay);
     document.body.appendChild(popup);
 }

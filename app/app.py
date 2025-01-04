@@ -1,5 +1,5 @@
-from flask import Flask, request, render_template, session
-from wrapper.main import get_gemini_response, get_related_news
+from flask import Flask, request, render_template, session, jsonify
+from wrapper.main import get_gemini_response, get_related_news, get_image_description_and_image
 import re
 from flask_socketio import SocketIO
 
@@ -7,18 +7,18 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
 socketio = SocketIO(app, async_mode='eventlet')
 
-# @app.route("/generate-image-description", methods=["POST"])
-# def generate_image_description():
-#     data = request.get_json()
-#     word = data.get("word")
-#     if not word:
-#         return jsonify({"error": "No word provided"}), 400
-
-#     # Call Gemini to generate a description for the bolded word
-#     description = f"A creative and illustrative image for '{word}'."  # Replace with actual API call
-#     image_url = pollinator_api_generate_image(description)  # Call Pollinator API
-
-#     return jsonify({"image_url": image_url})
+@app.route("/generate-image-description", methods=["POST"])
+def generate_image():
+    data = request.get_json()
+    word = data.get("word")
+    if not word:
+        return jsonify({"error": "No word provided"}), 400
+    
+    last_user_prompt = session['chat_history'][-2]['text']
+    last_gemini_response = session['chat_history'][-1]['text']
+    
+    url = get_image_description_and_image(last_gemini_response=last_gemini_response, last_user_query=last_user_prompt, key_word=word)
+    return jsonify({"image_url": url})
 
 
 def format_gemini_response(text):
