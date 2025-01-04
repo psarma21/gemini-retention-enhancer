@@ -12,7 +12,9 @@
         <h1>Chat with Enhanced Gemini AI</h1>
         <div class="chat-box" id="chat-box">
             {% for message in chat_history %}
-                <div class="message {{ message.type }}">{% autoescape false %}{{ message.text }}{% endautoescape %}</div>
+                <div class="message {{ message.type }}">
+                    {% autoescape false %}{{ message.text }}{% endautoescape %}
+                </div>
             {% endfor %}
         </div>
         <form method="post" action="/">

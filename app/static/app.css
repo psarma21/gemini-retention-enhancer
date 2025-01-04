@@ -104,10 +104,15 @@ input[type="submit"]:hover {
     background-color: #dbeafe;
 }
 
-/* Updated text styling */
-.bold-text {
-    font-weight: 600;
-    color: #000000;
+.bold-text.clickable-word {
+    font-weight: bold; /* Ensure the text remains bold */
+    color: black;      /* Set the text color to black */
+    text-decoration: none; /* Remove the underline */
+    cursor: pointer;   /* Show pointer cursor on hover */
+}
+
+.bold-text.clickable-word:hover {
+    color: #555; /* Optional: Add a hover effect if desired */
 }
 
 .italic-text {
@@ -222,4 +227,37 @@ br {
     .message.ai .table-wrapper {
         margin: 10px 0;
     }
+}
+
+.clickable-word {
+    cursor: pointer;
+    color: blue; /* Optional: Differentiate clickable words visually */
+    text-decoration: underline;
+}
+
+.image-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    text-align: center;
+}
+
+.image-popup img {
+    max-width: 100%;
+    height: auto;
+}
+
+.image-popup button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background: red;
+    color: white;
+    border: none;
+    cursor: pointer;
 }
