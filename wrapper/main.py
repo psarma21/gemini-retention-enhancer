@@ -19,9 +19,9 @@ def add_context_to_prompt(prompt, u1, g1, u2):
     if u1 is None:
         return prompt
     elif u2 is None:
-        return prompt + "Here is additional context about the query: The last user prompt was " + u1 + " and the last Gemini response was " + g1
+        return prompt + "Here is additional context about the query. If it is unrelated to the current query, disregard it. The last user prompt was " + u1 + " and the last Gemini response was " + g1
     else:
-        return prompt + "Here is additional context about the query: The last two users prompts were " + u1 + " and " + u2 + " , and the last Gemini response was " + g1
+        return prompt + "Here is additional context about the query. If it is unrelated to the current query, disregard it. The last two users prompts were " + u1 + " and " + u2 + " , and the last Gemini response was " + g1
 
 def get_gemini_response(text, topic, last_user_prompt, last_gemini_response, second_to_last_user_prompt):
     # enhancement #1 - modernization of language
@@ -60,7 +60,7 @@ def get_related_news(last_gemini_response, last_user_query):
 
 def get_image_description_and_image(last_gemini_response, last_user_query, key_word):
     # Call Gemini to generate a description for the bolded word
-    image_query_prompt = "Given the user's question, your response, and specific word in your response, provide a detailed description of an image that would visually represent that word that also enhances the understanding of the overlying concept discussed. The image should be creative, colorful, and engaging, designed to help a novice computer science learner grasp the concept intuitively. For example, if the word is 'linked list', the description might include visual metaphors or illustrative elements, such as 'a chain of nodes connected by arrows, each node containing a small icon of data inside.' The goal is to create a vivid and imaginative representation that bridges theory with an accessible visual analogy."
+    image_query_prompt = "Given the user's question, your response, and specific word in your response, provide detailed steps to create an image that would visually represent that word that also enhances the understanding of the overlying concept discussed. These steps will be directly passed to an AI image generator so the steps need to be clear. The image should be creative and engaging, designed to help a novice computer science learner grasp the concept intuitively. For example, if the word is 'linked list', the description might include visual metaphors or illustrative elements, such as 'a long chain of nodes connected by arrows, each node containing a small icon of data inside. The goal is to create a vivid and imaginative representation that bridges theory with an accessible visual analogy. The AI generator cannot create text well so ideally the description should not ask to generate any text in the image. The image should be able to explain that word without any caption or text."
     context = " Here is the user's query: " + last_user_query + " . Here is your response: " + last_gemini_response + ' . Here is the key word: ' + key_word
     image_description_response = model.generate_content([image_query_prompt + context], generation_config=config)
     
