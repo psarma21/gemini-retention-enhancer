@@ -44,14 +44,19 @@ def get_news():
     print(result.text)
  
 def get_image_from_pollinator():
-    query="an apple under the moonlight"
+    query="an apple under the moonlight. add a caption at the bottom of the photo saying 'this is an apple'"
     
-    url = f"https://pollinations.ai/p/{query.text}"
+    url = f"https://pollinations.ai/p/{query}"
     response = requests.get(url)
     with open('generated_image.jpg', 'wb') as file:
         file.write(response.content)
     print('Image downloaded!')
     
+def experiment():
+    prompt = "Can you send links that explain what a linked list is"
+    original_result = model.generate_content([prompt], generation_config=config)
+    print(original_result.text)
+    
             
 if __name__ == "__main__":
-    get_image_from_pollinator()
+    experiment()
