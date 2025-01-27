@@ -1,9 +1,8 @@
 # wrapper/main.py
 import google.generativeai as genai
 import os
-from pathlib import Path
 from newsapi import NewsApiClient
-import requests
+import json
 
 # Configure the API key and initialize the model
 gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -44,13 +43,35 @@ def get_news():
     print(result.text)
  
 def get_image_from_pollinator():
-    query="an apple under the moonlight. add a caption at the bottom of the photo saying 'this is an apple'"
+    image_query_prompt = "Given the prompt of creating a random image, provide detailed steps to create an image that visually represents that word and enhances understanding of the overarching concept. These steps will be directly passed to an AI image generator, so they must be clear and free of requests for text in the image. Additionally, generate a concise and engaging caption that a novice learner can use to interpret and connect with the image. For example, for 'linked list,' the description might include 'a long chain of nodes connected by arrows, each node containing a small icon of data,' while the caption could be 'Nodes linked in a chain to represent a linked list"
+    json_prompt = """Use this JSON schema:
+
+Response = {'image_description': str, 'caption': str}
+Return: Response"""
+    image_description_response = model.generate_content([image_query_prompt + json_prompt], generation_config=config)
     
-    url = f"https://pollinations.ai/p/{query}"
-    response = requests.get(url)
-    with open('generated_image.jpg', 'wb') as file:
-        file.write(response.content)
-    print('Image downloaded!')
+    response_text = image_description_response.text
+    cleaned_text = response_text.replace("```json", "").replace("```", "").strip()
+    print(cleaned_text)
+    
+    try:
+    # Convert the response text to JSON
+        response_json = json.loads(cleaned_text)
+    
+    # Access individual components
+        image_description = response_json.get("image_description", "")
+        caption = response_json.get("caption", "")
+        
+        print("Image Description:", image_description)
+        print("Caption:", caption)
+    except json.JSONDecodeError as e:
+        print("Failed to parse the response as JSON. Error:", str(e))
+    
+    # url = f"https://pollinations.ai/p/{query}"
+    # response = requests.get(url)
+    # with open('generated_image.jpg', 'wb') as file:
+    #     file.write(response.content)
+    # print('Image downloaded!')
     
 def experiment():
     prompt = "Can you send links that explain what a linked list is"
@@ -59,4 +80,4 @@ def experiment():
     
             
 if __name__ == "__main__":
-    experiment()
+    get_image_from_pollinator()

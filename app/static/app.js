@@ -63,13 +63,14 @@ function fetchImageForWord(word) {
     })
         .then((response) => response.json())
         .then((data) => {
-            const imageUrl = data.image_url; // Get image URL from response
-            displayImagePopup(word, imageUrl); // Show image popup
+            const imageUrl = data.image_url; // Get image url from response
+            const caption = data.caption; // get image caption from response
+            displayImagePopup(word, imageUrl, caption); // Show image popup
         })
         .catch((error) => console.error("Error fetching image:", error));
 }
 
-function displayImagePopup(word, imageUrl) {
+function displayImagePopup(word, imageUrl, caption) {
     // Create overlay
     const overlay = document.createElement("div");
     overlay.classList.add("image-popup-overlay");
@@ -81,7 +82,7 @@ function displayImagePopup(word, imageUrl) {
     // Create content
     popup.innerHTML = `
         <button class="close-button" aria-label="Close popup">×</button>
-        <h3>${word}</h3>
+        <h3>${caption}</h3>
         <img src="${imageUrl}" alt="${word}" loading="lazy">
     `;
     

@@ -124,7 +124,7 @@ def generate_image():
 
     conn = sqlite3.connect("chat_history.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT message_type, message_text FROM chat_history ORDER BY id DESC LIMIT 3")
+    cursor.execute("SELECT message_type, message_text FROM chat_history ORDER BY id DESC LIMIT 2")
     messages = cursor.fetchall()
     conn.close()
         
@@ -132,12 +132,13 @@ def generate_image():
     last_gemini_response = messages[0][1]
 
     # Generate the image URL
-    url = get_image_description_and_image(
+    url, caption = get_image_description_and_image(
         last_gemini_response=last_gemini_response,
         last_user_query=last_user_prompt,
         key_word=word
     )
-    return jsonify({"image_url": url})
+    print(url, caption)
+    return jsonify({"image_url": url, "caption": caption})
 
 # news API
 @app.route("/test_emit")
