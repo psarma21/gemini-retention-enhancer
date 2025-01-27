@@ -5,7 +5,7 @@ from flask_socketio import SocketIO
 import sqlite3
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for session management
+app.secret_key = 'your_secret_key'  # required for session management
 socketio = SocketIO(app, async_mode='eventlet')
 
 # init_and_clear_db clears existing data and create sqlite db on startup
@@ -50,7 +50,7 @@ def format_gemini_response(text):
         header = [cell.strip() for cell in rows[0].strip('|').split('|') if cell.strip()]
         
         data_rows = []
-        for row in rows[2:]:  # Skip header and separator
+        for row in rows[2:]:  
             cells = [cell.strip() for cell in row.strip('|').split('|') if cell.strip()]
             if cells:
                 data_rows.append(cells)
@@ -131,13 +131,11 @@ def generate_image():
     last_user_prompt = messages[1][1]
     last_gemini_response = messages[0][1]
 
-    # Generate the image URL
     url, caption = get_image_description_and_image(
         last_gemini_response=last_gemini_response,
         last_user_query=last_user_prompt,
         key_word=word
     )
-    print(url, caption)
     return jsonify({"image_url": url, "caption": caption})
 
 # news API

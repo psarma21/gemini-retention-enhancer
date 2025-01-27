@@ -5,7 +5,7 @@ from newsapi import NewsApiClient
 import requests
 import json
 
-# Configure the API key and initialize the model
+# configure the API key and initialize the model
 api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-1.5-flash")
