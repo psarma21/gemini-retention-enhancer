@@ -35,66 +35,14 @@ def save_message_to_db(message_type, message_text):
     conn.commit()
     conn.close()
 
-# format_gemini_response formats Gemini response in a pretty and clean format
 def format_gemini_response(text):
-    def convert_table(match):
-        table_text = match.group(0)
-        rows = [row.strip() for row in table_text.split('\n') if row.strip()]
-        
-        if len(rows) < 2 or not all('|' in row for row in rows[:2]):
-            return table_text
-            
-        if not rows[1].replace('|', '').replace('-', '').replace(':', '').strip() == '':
-            return table_text
-            
-        header = [cell.strip() for cell in rows[0].strip('|').split('|') if cell.strip()]
-        
-        data_rows = []
-        for row in rows[2:]:  
-            cells = [cell.strip() for cell in row.strip('|').split('|') if cell.strip()]
-            if cells:
-                data_rows.append(cells)
-        
-        html_parts = []
-        html_parts.append('<div class="table-wrapper"><table class="gemini-table">')
-        html_parts.append('<thead><tr>')
-        for cell in header:
-            html_parts.append(f'<th>{cell}</th>')
-        html_parts.append('</tr></thead>')
-        html_parts.append('<tbody>')
-        
-        for row in data_rows:
-            html_parts.append('<tr>')
-            while len(row) < len(header):
-                row.append('')
-            for cell in row[:len(header)]:
-                html_parts.append(f'<td>{cell}</td>')
-            html_parts.append('</tr>')
-        
-        html_parts.append('</tbody></table></div>')
-        return ''.join(html_parts)  
-
-    parts = []
-    last_end = 0
-    
-    pattern = r'(?:\n|\A)\|[^\n]+\|\n\|[-:|]+\|\n(?:\|[^\n]+\|\n?)+(?=\n[^|]|\Z)'
-    
-    for match in re.finditer(pattern, text, re.MULTILINE):
-        start = match.start()
-        if start > 0 and text[start-1] == '\n':
-            start -= 1
-        parts.append(text[last_end:start])
-        parts.append(convert_table(match))
-        last_end = match.end()
-    
-    parts.append(text[last_end:])
-    text = ''.join(parts)
-    text = re.sub(r'```(.*?)```', r'<pre class="code-block"><code>\1</code></pre>', text, flags=re.S) # format code in different font
-    text = re.sub(r'\n\s*\n+', '\n\n', text) # remove extra blank lines
-    text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text clickable-word">\1</b>', text) # bold formatting 
-    text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text) # italic formatting
-    text = re.sub(r'^\* ', r'<span class="bullet">•</span> ', text, flags=re.M) # add bullet points when necessary
-    text = text.replace("\n", "<br>")  # line breaks outside code blocks 
+    text = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)', r'<a href="\2" target="_blank">\1</a>', text) # Convert Markdown links to HTML <a> tags
+    text = re.sub(r'```(.*?)```', r'<pre class="code-block"><code>\1</code></pre>', text, flags=re.S) # Format code in different font
+    text = re.sub(r'\n\s*\n+', '\n\n', text) # Remove extra blank lines
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text clickable-word">\1</b>', text)  # Bold formatting
+    text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text)  # Italic formatting
+    text = re.sub(r'^\* (.*)', r'<li>\1</li>', text, flags=re.M)  # Ensure bullet points are converted properly (handling lists)
+    text = text.replace("\n", "<br>")  
     return text
 
 # format_gemini_response_text formats Gemini response from Gemini's news output

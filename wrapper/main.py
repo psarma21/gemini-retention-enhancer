@@ -1,5 +1,6 @@
 # wrapper/main.py
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import os
 from newsapi import NewsApiClient
 import requests
@@ -7,14 +8,13 @@ import json
 
 # configure the API key and initialize the model
 api_key = os.getenv("GEMINI_API_KEY")
-genai.configure(api_key=api_key)
-model = genai.GenerativeModel("gemini-1.5-flash")
+client = genai.Client(api_key=api_key)
+config=types.GenerateContentConfig(
+    temperature=2.0
+)
+model = "gemini-2.0-flash"
 
 news_api_key = os.getenv("NEWS_API_KEY")
-
-config = genai.GenerationConfig(
-    temperature=2.0, # increasing response creativity
-)
 
 def add_context_to_prompt(prompt, u1, g1, u2):
     if u1 is None:
@@ -31,18 +31,21 @@ def get_gemini_response(text, topic, last_user_prompt, last_gemini_response, sec
         if topic != "none":
             prompt = text + """. The previous sentence(s) are the user's initial prompt. Rewrite your response to make it more engaging and 
             relatable for a novice CS student in college who is interested in """ + topic + """ . Be creative and modern in your 
-            explanation. Include a relevant diagram, table, or other visual representation to enhance understanding, and provide a 
-            concise walkthrough explaining its significance and how it relates to the user's question. Bold key concepts to highlight their 
-            significance. """
+            explanation. Include a relevant diagram or other visual representation to enhance understanding, and provide a 
+            concise walkthrough explaining its significance and how it relates to the user's question. Only do this if a visual 
+            representation is needed. If applicable, add a small 'Next Steps' section giving 3 topics and links that encourages the user to explore related 
+            topics. Bold key concepts to highlight their significance. Avoid empty new lines in your response."""
             prompt_with_context = add_context_to_prompt(prompt, u1=last_user_prompt, g1=last_gemini_response, u2=second_to_last_user_prompt)
-            response =  model.generate_content([prompt_with_context], generation_config=config)  
+            response =  client.models.generate_content(model=model, contents=[prompt_with_context], config=config)  
         else:
             prompt = text + """. The previous sentence(s) are the user's initial prompt. Rewrite your response to make it more engaging 
-            and relatable for a novice CS student in college. Be creative and modern in your explanation. Include a relevant diagram, 
-            table, or other visual representation to enhance understanding, and provide a concise walkthrough explaining its significance 
-            and how it relates to the user's question. Bold key concepts to highlight their significance. """
+            and relatable for a novice CS student in college. Be creative and modern in your explanation. Include a relevant diagram 
+            or other visual representation to enhance understanding, and provide a concise walkthrough explaining its significance 
+            and how it relates to the user's question. Only do this if a visual representation is needed. If applicable, add a small 'Next Steps' section 
+            giving 3 topics and links that encourages the user to explore related topics. Bold key concepts to highlight their significance.
+            Avoid empty new lines in your response."""
             prompt_with_context = add_context_to_prompt(prompt, u1=last_user_prompt, g1=last_gemini_response, u2=second_to_last_user_prompt)
-            response =  model.generate_content([prompt_with_context], generation_config=config)  
+            response =  client.models.generate_content(model=model, contents=[prompt_with_context], config=config)  
         return response.text
     except Exception as e:
         return f"Error: {e}"
@@ -58,17 +61,16 @@ def get_related_news(last_gemini_response, last_user_query):
     for article in articles:
         news += f"Title: {article['title']}" + f"Description: {article['description']}\n" + f"Content: {article['content']}\n"
         
-    # print(news)
+    print(news)
             
     # original query + Gemini original response + news 
     summarize_news_prompt = """Using the user's original query and your initial response, analyze the provided news articles to 
-    identify real-world events, companies/technologies/products, or people that connect to the concept discussed. List 8-10 
+    identify real-world events, companies/technologies/products, or people that connect to the concept discussed. List 5 
     connections in a bullet point manner with a one-sentence-maximum explanation emphasizing how it relates to the user's question. 
     If no relevant articles are available, mention that in a sentence, and instead reference real-world events, technologies, or people 
-    you know to illustrate the concept. But try to extract any information from the news first. Bold key words like company or product 
-    names to enhance user engagement. """
+    you know to illustrate the concept. Bold key words like company or product names to enhance user engagement."""
     context = " The following was the user query: " + last_user_query + ". The following was your response: " + last_gemini_response + ". The following is the news: " + news
-    result = model.generate_content([summarize_news_prompt+context], generation_config=config)
+    result =  client.models.generate_content(model=model, contents=[summarize_news_prompt+context], config=config)  
     return result.text
 
 # enhancement 3 - call Gemini to generate a description for the bolded word
@@ -84,7 +86,7 @@ def get_image_description_and_image(last_gemini_response, last_user_query, key_w
     caption_json_prompt = """Additionally, generate a concise and engaging caption that a novice learner can use to interpret and connect with the image
     . For the entire response, use this JSON schema: {'image_description': str, 'caption': str}"""
     context = " Here is the user's query: " + last_user_query + " . Here is your response: " + last_gemini_response + ' . Here is the key word: ' + key_word
-    image_description_response = model.generate_content([image_query_prompt + caption_json_prompt + context], generation_config=config)
+    image_description_response = client.models.generate_content(model=model, contents=[image_query_prompt + caption_json_prompt + context], config=config)
     
     image_description_response_text = image_description_response.text
     cleaned_text = image_description_response_text.replace("```json", "").replace("```", "").strip()
