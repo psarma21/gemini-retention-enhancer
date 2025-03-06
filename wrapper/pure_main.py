@@ -4,6 +4,7 @@ from google.genai import types
 from openai import OpenAI
 import os
 from newsapi import NewsApiClient
+import requests
 
 # Configure the API key and initialize the model
 gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -15,32 +16,33 @@ config=types.GenerateContentConfig(
 news_api_key = os.getenv("NEWS_API_KEY")
 
 # get latest news
-# def get_news():
-#     user_prompt = "Explain to me AI"
-#     prompt = user_prompt + ". The previous sentence(s) are the user's initial prompt. Rewrite your response to make it more engaging and relatable for a novice CS student in college. Be creative and modern in your explanation. Include a relevant diagram, table, or other visual representation to enhance understanding, and provide a concise walkthrough explaining its significance and how it relates to the user's question. "
-#     original_result = model.generate_content([prompt], generation_config=config)
-#     # print(result.text)
+def get_news():
+    newsapi = NewsApiClient(api_key=news_api_key)
+    key_word='technology'
+    # url = "https://newsapi.org/v2/everything"
+    # params = {
+    #     "q": key_word,
+    #     "apiKey": news_api_key,
+    # }
     
-#     prompt = original_result.text + ". The previous sentences are your response to the initial query. Pick a key word/phrase from the response which you feel would be beneficial to include the latest news about. I will be making an API to call get the latest news about this word/phrase. The goal for this news is to allow the user to connect CS concepts with things they see in real life or in the industry. Only return those the word/phrase. "
-#     result = model.generate_content([prompt], generation_config=config)
-#     # print(result.text)
-
-#     newsapi = NewsApiClient(api_key=news_api_key)
-
-#     word = result.text
-#     targetedArticles = newsapi.get_everything(q=word)
-#     articles = targetedArticles["articles"]
-#     news = ""
-#     for article in articles:
-#         news += f"Title: {article['title']}" + f"Description: {article['description']}\n" + f"Content: {article['content']}\n\n"
+    # response = requests.get(url, params=params)
     
-#     # main idea + Gemini original response + news 
-#     prompt = "Given the user's original query and your initial response, identify a recent real-world event, example, or development from the provided news articles that illustrates or connects to the topic. Summarize the example and explain how it relates to the user's query and your response. The following was your original response: " + original_result.text + " The following was the main concept from your response: " + word + " . The following is the news: " + news
-   
-#     # main idea + user initial query + Gemini original response + news
-#     # prompt = "Given the user's original query and your initial response, identify a recent real-world event, example, or development from the provided news articles that illustrates or connects to the topic. Summarize the example and explain how it relates to the user's query and your response. Here is the user's original question: " + user_prompt + " The following is your response: " + original_result.text + "The following is the main concept from the user's question: " + word + " . The following is the news: " + news
-#     result = model.generate_content([prompt], generation_config=config)
-#     print(result.text)
+    # if response.status_code == 200:
+    #     data = response.json()
+    #     for article in data["articles"][:5]:  # Print top 5 articles
+    #         print(f"Title: {article['title']}")
+    #         print(f"Source: {article['source']['name']}")
+    #         print(f"URL: {article['url']}\n")
+    # else:
+    #     print(f"Error: {response.status_code}, {response.text}")
+    
+    targetedArticles = newsapi.get_everything(q=key_word)
+    articles = targetedArticles["articles"]
+    news = ""
+    for article in articles:
+        news += f"Title: {article['title']}" + f"Description: {article['description']}\n" + f"Content: {article['content']}\n\n"
+        
+    print(news)
     
 def experiment():
     prompt = "tell me the news today"
@@ -90,4 +92,4 @@ def deepseek_with_news():
     print(response.choices[0].message.content) 
     
 if __name__ == "__main__":
-    deepseek_with_news()
+    get_news()

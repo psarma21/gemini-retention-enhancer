@@ -36,13 +36,53 @@ def save_message_to_db(message_type, message_text):
     conn.close()
 
 def format_gemini_response(text):
-    text = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)', r'<a href="\2" target="_blank">\1</a>', text) # Convert Markdown links to HTML <a> tags
-    text = re.sub(r'```(.*?)```', r'<pre class="code-block"><code>\1</code></pre>', text, flags=re.S) # Format code in different font
-    text = re.sub(r'\n\s*\n+', '\n\n', text) # Remove extra blank lines
-    text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text clickable-word">\1</b>', text)  # Bold formatting
-    text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text)  # Italic formatting
-    text = re.sub(r'^\* (.*)', r'<li>\1</li>', text, flags=re.M)  # Ensure bullet points are converted properly (handling lists)
-    text = text.replace("\n", "<br>")  
+    # Process mermaid code blocks
+    mermaid_match = re.search(r'```mermaid\s*(.*?)```', text, flags=re.DOTALL)
+    
+    if mermaid_match:
+        mermaid_code = mermaid_match.group(1).strip()
+        print("Extracted Mermaid Code:", mermaid_code)  # Debugging
+        
+        # Split the text into parts: before, mermaid, and after
+        before_mermaid = text[:mermaid_match.start()]
+        after_mermaid = text[mermaid_match.end():]
+        
+        # Format the parts separately and then recombine
+        before_formatted = before_mermaid.replace("\n", "<br>")
+        mermaid_formatted = f'<div class="mermaid">{mermaid_code}</div>'
+        after_formatted = after_mermaid.replace("\n", "<br>")
+        
+        # Recombine the text
+        text = before_formatted + mermaid_formatted + after_formatted
+    else:
+        # If no mermaid diagram, just replace all newlines
+        text = text.replace("\n", "<br>")
+    
+    # Convert Markdown links to HTML <a> tags
+    text = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)', r'<a href="\2" target="_blank">\1</a>', text)
+    
+    # Format code blocks with specific language highlighting
+    text = re.sub(r'```(txt|css|cpp|c|java|py|html|js|sh|sql)(.*?)```', 
+                 r'<pre class="language-\1"><code class="language-\1">\2</code></pre>', 
+                 text, flags=re.DOTALL)
+    
+    # Format generic code blocks
+    text = re.sub(r'```(.*?)```', 
+                 r'<pre class="code-block"><code>\1</code></pre>', 
+                 text, flags=re.DOTALL)
+    
+    # Remove extra blank lines (convert multiple <br> to just one)
+    text = re.sub(r'<br>\s*<br>+', '<br><br>', text)
+    
+    # Bold formatting
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text clickable-word">\1</b>', text)
+    
+    # Italic formatting
+    text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text)
+    
+    # Ensure bullet points are converted properly
+    text = re.sub(r'^\* (.*)', r'<li>\1</li>', text, flags=re.MULTILINE)
+    
     return text
 
 # format_gemini_response_text formats Gemini response from Gemini's news output

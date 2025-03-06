@@ -68,7 +68,8 @@ def get_related_news(last_gemini_response, last_user_query):
     identify real-world events, companies/technologies/products, or people that connect to the concept discussed. List 5 
     connections in a bullet point manner with a one-sentence-maximum explanation emphasizing how it relates to the user's question. 
     If no relevant articles are available, mention that in a sentence, and instead reference real-world events, technologies, or people 
-    you know to illustrate the concept. Bold key words like company or product names to enhance user engagement."""
+    you know to illustrate the concept. Bold key words like company or product names to enhance user engagement. Include the news title at 
+    the beginning of each bullet point."""
     context = " The following was the user query: " + last_user_query + ". The following was your response: " + last_gemini_response + ". The following is the news: " + news
     result =  client.models.generate_content(model=model, contents=[summarize_news_prompt+context], config=config)  
     return result.text

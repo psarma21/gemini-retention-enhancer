@@ -6,6 +6,9 @@
     <title>Chat with Gemini AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
     <script src="{{ url_for('static', filename='app.js') }}"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -37,7 +40,34 @@
         </form>
     </div>  
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+
+    <script type="module">
+        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+        mermaid.initialize({ 
+            startOnLoad: true,
+            logLevel: 3 // Enables debug logging
+        });
+
+        window.addEventListener("DOMContentLoaded", () => {
+            try {
+                mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+            } catch (error) {
+                console.error("Mermaid rendering error:", error);
+            }
+        });
+    </script>
+
     <script>
+        // Define the scrollChatToBottom function first
+        function scrollChatToBottom(delay = 100) {
+            setTimeout(() => {
+                const chatBox = document.getElementById("chat-box");
+                if (chatBox) {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            }, delay);
+        }
+
         const socket = io({
             transports: ['websocket']
         });
@@ -50,17 +80,68 @@
                 console.error("Chat box element not found!");
                 return;
             }
+            
             const additionalMessage = document.createElement('div');
             additionalMessage.className = 'message ai';
             additionalMessage.innerHTML = data.text;
             chatBox.appendChild(additionalMessage);
-            chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+            
+            // Initial scroll attempt
+            chatBox.scrollTop = chatBox.scrollHeight;
+            
+            // Process mermaid diagrams and code
+            setTimeout(() => {
+                // Re-initialize Mermaid.js to render any new diagrams
+                if (window.mermaid) {
+                    try {
+                        mermaid.init(undefined, document.querySelectorAll('.mermaid:not([data-processed="true"])'));
+                        // Scroll again after mermaid rendering (which can change content height)
+                        scrollChatToBottom(50);
+                    } catch (error) {
+                        console.error("Mermaid rendering error:", error);
+                    }
+                }
+                
+                // Highlight code blocks
+                Prism.highlightAll();
+                
+                // Final scroll after all processing
+                scrollChatToBottom(200);
+            }, 100);
         });
 
-         // Handle any socket errors
+        // Handle any socket errors
         socket.on('connect_error', (error) => {
             console.error('WebSocket connection error:', error);
         });
+
+        // Also update your window.onload
+        window.onload = function () {
+            // Initialize mermaid
+            if (window.mermaid) {
+                try {
+                    mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                } catch (error) {
+                    console.error("Mermaid initialization error:", error);
+                }
+            }
+            
+            // Initialize Prism for syntax highlighting
+            Prism.highlightAll();
+            
+            // Setup event listener for the custom topic radio button
+            document.getElementById('other').addEventListener('change', function() {
+                const customInput = document.querySelector('input[name="custom_topic_input"]');
+                if (this.checked) {
+                    customInput.style.display = 'inline-block';
+                } else {
+                    customInput.style.display = 'none';
+                }
+            });
+            
+            // Scroll to bottom on page load
+            scrollChatToBottom();
+        };
     </script>
 </body>
 </html>
