@@ -3,6 +3,7 @@ from wrapper.main import get_gemini_response, get_related_news, get_image_descri
 import re
 from flask_socketio import SocketIO
 import sqlite3
+import html
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # required for session management
@@ -57,32 +58,15 @@ def format_gemini_response(text):
     else:
         # If no mermaid diagram, just replace all newlines
         text = text.replace("\n", "<br>")
-    
-    # Convert Markdown links to HTML <a> tags
-    text = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)', r'<a href="\2" target="_blank">\1</a>', text)
-    
-    # Format code blocks with specific language highlighting
-    text = re.sub(r'```(txt|css|cpp|c|java|py|html|js|sh|sql)(.*?)```', 
-                 r'<pre class="language-\1"><code class="language-\1">\2</code></pre>', 
-                 text, flags=re.DOTALL)
-    
-    # Format generic code blocks
-    text = re.sub(r'```(.*?)```', 
-                 r'<pre class="code-block"><code>\1</code></pre>', 
-                 text, flags=re.DOTALL)
-    
-    # Remove extra blank lines (convert multiple <br> to just one)
-    text = re.sub(r'<br>\s*<br>+', '<br><br>', text)
-    
-    # Bold formatting
-    text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text clickable-word">\1</b>', text)
-    
-    # Italic formatting
-    text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text)
-    
-    # Ensure bullet points are converted properly
-    text = re.sub(r'^\* (.*)', r'<li>\1</li>', text, flags=re.MULTILINE)
-    
+
+    text = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)', r'<a href="\2" target="_blank">\1</a>', text) # Convert Markdown links to HTML <a> tags
+    text = re.sub(r'```(.*?)```', r'<pre class="code-block"><code>\1</code></pre>', text, flags=re.DOTALL) # Format generic code blocks
+    text = re.sub(r'`([^`]+)`', r'<code class="inline-code">\1</code>', text)  # Handle inline code (text within single backticks)
+    text = re.sub(r'`([^`]+)`', lambda m: f'<code class="inline-code">{html.escape(m.group(1))}</code>', text) # Handle inline code (text within single backticks)
+    text = re.sub(r'<br>\s*<br>+', '<br><br>', text) # Remove extra blank lines (convert multiple <br> to just one)
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text clickable-word">\1</b>', text)     # Bold formatting
+    text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text) # Italic formatting
+    text = re.sub(r'^\* (.*)', r'<li>\1</li>', text, flags=re.MULTILINE) # Ensure bullet points are converted properly 
     return text
 
 # format_gemini_response_text formats Gemini response from Gemini's news output
