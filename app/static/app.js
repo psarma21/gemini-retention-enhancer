@@ -100,3 +100,14 @@ function displayImagePopup(word, imageUrl, caption) {
     document.body.appendChild(overlay);
     document.body.appendChild(popup);
 }
+
+// Metrics
+
+// #1 - Number of clicks by user
+let clickCount = localStorage.getItem("clickCount") ? parseInt(localStorage.getItem("clickCount")) : 0;
+console.log("Number of clicks (saved):", clickCount); // Display initial count in console
+document.addEventListener("click", () => {
+    clickCount++;  
+    localStorage.setItem("clickCount", clickCount); // Save updated count
+    console.log("Number of clicks:", clickCount);
+});

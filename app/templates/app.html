@@ -50,7 +50,7 @@
 
         window.addEventListener("DOMContentLoaded", () => {
             try {
-                mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+                mermaid.run(undefined, document.querySelectorAll(".mermaid"));
             } catch (error) {
                 console.error("Mermaid rendering error:", error);
             }
@@ -94,7 +94,7 @@
                 // Re-initialize Mermaid.js to render any new diagrams
                 if (window.mermaid) {
                     try {
-                        mermaid.init(undefined, document.querySelectorAll('.mermaid:not([data-processed="true"])'));
+                        mermaid.run(undefined, document.querySelectorAll('.mermaid:not([data-processed="true"])'));
                         // Scroll again after mermaid rendering (which can change content height)
                         scrollChatToBottom(50);
                     } catch (error) {
@@ -120,7 +120,7 @@
             // Initialize mermaid
             if (window.mermaid) {
                 try {
-                    mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                    mermaid.run(undefined, document.querySelectorAll('.mermaid'));
                 } catch (error) {
                     console.error("Mermaid initialization error:", error);
                 }
