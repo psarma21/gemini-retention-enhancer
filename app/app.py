@@ -36,38 +36,137 @@ def save_message_to_db(message_type, message_text):
     conn.commit()
     conn.close()
 
-def format_gemini_response(text):
-    # Process mermaid code blocks
-    mermaid_match = re.search(r'```mermaid\s*(.*?)```', text, flags=re.DOTALL)
+# def format_gemini_response(text):
+#     # Process mermaid code blocks
+#     mermaid_match = re.search(r'```mermaid\s*(.*?)```', text, flags=re.DOTALL)
     
-    if mermaid_match:
-        mermaid_code = mermaid_match.group(1).strip()
-        print("Extracted Mermaid Code:", mermaid_code)  # Debugging
+#     if mermaid_match:
+#         mermaid_code = mermaid_match.group(1).strip()
+#         print("Extracted Mermaid Code:", mermaid_code)  # Debugging
         
-        # Split the text into parts: before, mermaid, and after
-        before_mermaid = text[:mermaid_match.start()]
-        after_mermaid = text[mermaid_match.end():]
+#         # Split the text into parts: before, mermaid, and after
+#         before_mermaid = text[:mermaid_match.start()]
+#         after_mermaid = text[mermaid_match.end():]
         
-        # Format the parts separately and then recombine
-        before_formatted = before_mermaid.replace("\n", "<br>")
-        mermaid_formatted = f'<div class="mermaid">{mermaid_code}</div>'
-        after_formatted = after_mermaid.replace("\n", "<br>")
+#         # Format the parts separately and then recombine
+#         before_formatted = before_mermaid.replace("\n", "<br>")
+#         mermaid_formatted = f'<div class="mermaid">{mermaid_code}</div>'
+#         after_formatted = after_mermaid.replace("\n", "<br>")
         
-        # Recombine the text
-        text = before_formatted + mermaid_formatted + after_formatted
-    else:
-        # If no mermaid diagram, just replace all newlines
-        text = text.replace("\n", "<br>")
+#         # Recombine the text
+#         text = before_formatted + mermaid_formatted + after_formatted
+#     else:
+#         # If no mermaid diagram, just replace all newlines
+#         text = text.replace("\n", "<br>")
 
-    text = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)', r'<a href="\2" target="_blank">\1</a>', text) # Convert Markdown links to HTML <a> tags
-    text = re.sub(r'```(.*?)```', r'<pre class="code-block"><code>\1</code></pre>', text, flags=re.DOTALL) # Format generic code blocks
-    text = re.sub(r'`([^`]+)`', r'<code class="inline-code">\1</code>', text)  # Handle inline code (text within single backticks)
-    text = re.sub(r'`([^`]+)`', lambda m: f'<code class="inline-code">{html.escape(m.group(1))}</code>', text) # Handle inline code (text within single backticks)
-    text = re.sub(r'<br>\s*<br>+', '<br><br>', text) # Remove extra blank lines (convert multiple <br> to just one)
-    text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text clickable-word">\1</b>', text)     # Bold formatting
-    text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text) # Italic formatting
-    text = re.sub(r'^\* (.*)', r'<li>\1</li>', text, flags=re.MULTILINE) # Ensure bullet points are converted properly 
+#     text = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)', r'<a href="\2" target="_blank">\1</a>', text) # Convert Markdown links to HTML <a> tags
+#     text = re.sub(r'```(.*?)```', r'<pre class="code-block"><code>\1</code></pre>', text, flags=re.DOTALL) # Format generic code blocks
+#     text = re.sub(r'`([^`]+)`', r'<code class="inline-code">\1</code>', text)  # Handle inline code (text within single backticks)
+#     text = re.sub(r'`([^`]+)`', lambda m: f'<code class="inline-code">{html.escape(m.group(1))}</code>', text) # Handle inline code (text within single backticks)
+#     text = re.sub(r'<br>\s*<br>+', '<br><br>', text) # Remove extra blank lines (convert multiple <br> to just one)
+#     text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text clickable-word">\1</b>', text)     # Bold formatting
+#     text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text) # Italic formatting
+#     text = re.sub(r'^\* (.*)', r'<li>\1</li>', text, flags=re.MULTILINE) # Ensure bullet points are converted properly 
+#     return text
+
+def format_markdown_table(match):
+    """
+    Converts a Markdown table (as captured by regex) into an HTML table.
+    (This is a simple implementation that you may adjust to fit your needs.)
+    """
+    table_text = match.group(1)
+    lines = table_text.strip().splitlines()
+    if len(lines) < 2:
+        return table_text  # Not a valid table.
+    # Use the first line for headers; the second line (separator) is skipped.
+    headers = [cell.strip() for cell in lines[0].strip('|').split('|')]
+    header_row = "<tr>" + "".join(f"<th>{h}</th>" for h in headers) + "</tr>"
+    rows = []
+    for line in lines[2:]:
+        cells = [cell.strip() for cell in line.strip('|').split('|')]
+        rows.append("<tr>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>")
+    return "<table>" + header_row + "".join(rows) + "</table>"
+
+def format_gemini_response(text):
+    # List to hold preserved blocks that must not be processed further.
+    preserved_blocks = []
+    
+    # --- Preserve SVG blocks (rendered as-is) ---
+    svg_pattern = r'```svg\s*(.*?)```'
+    def svg_replacement(match):
+        svg_content = match.group(1)
+        preserved_blocks.append(svg_content)
+        return f"__PRESERVED_BLOCK_{len(preserved_blocks) - 1}__"
+    text = re.sub(svg_pattern, svg_replacement, text, flags=re.DOTALL)
+    
+    # --- Preserve Mermaid diagrams ---
+    mermaid_pattern = r'```mermaid\s*(.*?)```'
+    def mermaid_replacement(match):
+        mermaid_content = match.group(1).strip()
+        formatted_block = f'<div class="mermaid">{mermaid_content}</div>'
+        preserved_blocks.append(formatted_block)
+        return f"__PRESERVED_BLOCK_{len(preserved_blocks) - 1}__"
+    text = re.sub(mermaid_pattern, mermaid_replacement, text, flags=re.DOTALL)
+    
+    # --- Process generic code blocks (skip mermaid and svg) ---
+    # This regex captures an optional language specifier in group 1 and the code in group 2.
+    code_pattern = r'```(?!mermaid|svg)(\w+)?\s*([\s\S]*?)```'
+    def code_replacement(match):
+        lang = match.group(1) if match.group(1) else ""
+        code_content = match.group(2).strip()
+        escaped_code = html.escape(code_content)
+        summary_text = "Show code" + (f" ({lang})" if lang else "")
+        # Wrap the code in a collapsible details element with a copy button.
+        formatted_code = (
+            f'<details class="code-details" style="margin:1em 0;">'
+            f'<summary>{summary_text}</summary>'
+            f'<button onclick="copyCode(this)" style="margin:0.5em 0;">Copy</button>'
+            f'<pre style="background-color:#f6f8fa; border-radius:6px; padding:1em; margin:0;">'
+            f'<code class="language-{lang if lang else "plaintext"}">{escaped_code}</code>'
+            f'</pre></details>'
+        )
+        preserved_blocks.append(formatted_code)
+        return f"__PRESERVED_BLOCK_{len(preserved_blocks) - 1}__"
+    text = re.sub(code_pattern, code_replacement, text, flags=re.DOTALL)
+    
+    # --- Process inline code (using single backticks) ---
+    text = re.sub(r'`([^`]+)`', 
+                  lambda m: f'<code class="inline-code">{html.escape(m.group(1))}</code>', 
+                  text)
+    
+    # --- Process Markdown tables ---
+    table_pattern = r'(?:\n|^)(\|.+\|\n\|[-:| ]+\|\n(?:\|.+\|\n)+)'
+    text = re.sub(table_pattern, lambda m: format_markdown_table(m), text)
+    
+    # --- Process headings (example: converting lines starting with ### into <h3>) ---
+    text = re.sub(r'^###\s+(?:\*\*)?([^*]+)(?:\*\*)?$', r'<h4>\1</h4>', text, flags=re.MULTILINE)
+    
+    # --- Replace newlines with <br> tags ---
+    text = text.replace("\n", "<br>")
+    
+    # --- Condense extra blank lines (e.g. three or more <br> into two) ---
+    text = re.sub(r'(<br>\s*){3,}', '<br><br>', text)
+    
+    # --- Bold formatting for **text** ---
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b class="bold-text clickable-word">\1</b>', text)
+    
+    # --- Italic formatting for *text* ---
+    text = re.sub(r'\*(.*?)\*', r'<i class="italic-text">\1</i>', text)
+    
+    # --- Convert bullet points: lines starting with "* " become list items ---
+    text = re.sub(r'^\* (.*)', r'<li>\1</li>', text, flags=re.MULTILINE)
+    
+    # --- Restore preserved blocks ---
+    for i, block in enumerate(preserved_blocks):
+        placeholder = f"__PRESERVED_BLOCK_{i}__"
+        text = text.replace(placeholder, block)
+    
     return text
+
+# TODO - make italics also bolded *something* = bold
+# TODO - fix too many new lines?
+# TODO - fix python code being indented improperly
+# TODO - fix analogies
 
 # format_gemini_response_text formats Gemini response from Gemini's news output
 def format_gemini_response_text(text):
@@ -146,6 +245,7 @@ def index():
         second_to_last_user_prompt = chat_history[-4]['text'] if len(chat_history) >= 4 else None
         ai_response = get_gemini_response(user_input, selected_topic, last_user_prompt, last_gemini_response, second_to_last_user_prompt)
         formatted_response = format_gemini_response(ai_response)
+        # formatted_response = ai_response
 
         save_message_to_db('user', user_input)
         save_message_to_db('ai', formatted_response)

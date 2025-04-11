@@ -9,20 +9,44 @@ import json
 # configure the API key and initialize the model
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
-config=types.GenerateContentConfig(
-    temperature=2.0
+response_config=types.GenerateContentConfig(
+    temperature=2.0,
+    system_instruction="""Be engaging and hip in your response while maintaining high technical strength. If applicable, return .svg or Mermaid code to create 
+        an engaging, basic, and simple diagram which would help me visually understand my question better. Provide a concise walkthrough of it. If applicable, give simple code 
+        with helpful comments that provides an engaging and interactive output such that I can compile separately to help me understand my question better. 
+        Provide a concise walkthrough of it. If applicable, ask a question at the end of your response if the user wants to learn about something deeper within the topic. 
+        Bold key concepts and engaging words to highlight their significance and capture the user's attention respectively. Avoid empty new lines, try not to make sentences 
+        too long in your response, and include relevant emojis in your response to capture the reader's attention."""
 )
 model = "gemini-2.0-flash"
 
 news_api_key = os.getenv("NEWS_API_KEY")
 
+# add_context_to_prompt adds previous chat history to the prompt as context for Gemini
 def add_context_to_prompt(prompt, u1, g1, u2):
-    if u1 is None:
-        return prompt
-    elif u2 is None:
-        return prompt + "Here is additional context about the query. If it is unrelated to the current query, disregard it. The last user prompt was " + u1 + " and the last Gemini response was " + g1
-    else:
-        return prompt + "Here is additional context about the query. If it is unrelated to the current query, disregard it. The last two users prompts were " + u1 + " and " + u2 + " , and the last Gemini response was " + g1
+    contents = []
+    if u2:
+        contents.append({
+            "role": "user",
+            "parts": [{"text": u2}]
+        })
+    if u1:
+        contents.append({
+            "role": "user",
+            "parts": [{"text": u1}]
+        })
+    if g1:
+        contents.append({
+            "role": "model",
+            "parts": [{"text": g1}]
+        })
+    if prompt:
+        contents.append({
+            "role": "user",
+            "parts": [{"text": prompt}]
+        })
+    return contents
+
 
 # enhancement #1 - modernization of language
 # modified query: vanilla query + modernization of vocabulary/language + customizable response (optional) + previous context to query
@@ -33,19 +57,18 @@ def get_gemini_response(text, topic, last_user_prompt, last_gemini_response, sec
             relatable for a novice CS student in college who is interested in """ + topic + """ . Be creative and modern in your 
             explanation. Include a relevant diagram or other visual representation to enhance understanding, and provide a 
             concise walkthrough explaining its significance and how it relates to the user's question. Only do this if a visual 
-            representation is needed. If applicable, add a small 'Next Steps' section giving 3 topics and links that encourages the user to explore related 
-            topics. Bold key concepts to highlight their significance. Avoid empty new lines in your response."""
+            representation is needed. If applicable, ask a follow-up question at the end of your response that encourages deeper exploration 
+            of the topic, such as reviewing related code, learning a subtopic, or applying the concept practically. Avoid empty new lines in your response."""
             prompt_with_context = add_context_to_prompt(prompt, u1=last_user_prompt, g1=last_gemini_response, u2=second_to_last_user_prompt)
-            response =  client.models.generate_content(model=model, contents=[prompt_with_context], config=config)  
+            response =  client.models.generate_content(model=model, contents=[prompt_with_context], config=response_config)  
         else:
-            prompt = text + """. The previous sentence(s) are the user's initial prompt. Rewrite your response to make it more engaging 
-            and relatable for a novice CS student in college. Be creative and modern in your explanation. Include a relevant diagram 
-            or other visual representation to enhance understanding, and provide a concise walkthrough explaining its significance 
-            and how it relates to the user's question. Only do this if a visual representation is needed. If applicable, add a small 'Next Steps' section 
-            giving 3 topics and links that encourages the user to explore related topics. Bold key concepts to highlight their significance.
-            Avoid empty new lines in your response."""
-            prompt_with_context = add_context_to_prompt(prompt, u1=last_user_prompt, g1=last_gemini_response, u2=second_to_last_user_prompt)
-            response =  client.models.generate_content(model=model, contents=[prompt_with_context], config=config)  
+            prompt = text + ". I am a novice CS student in college."   
+            chat_history = add_context_to_prompt(prompt, last_user_prompt, last_gemini_response, second_to_last_user_prompt)       
+            response = client.models.generate_content(
+                model=model,
+                contents=chat_history,
+                config=response_config
+            )
         return response.text
     except Exception as e:
         return f"Error: {e}"
